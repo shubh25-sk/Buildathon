@@ -2,6 +2,10 @@
 
 A step-by-step export cost calculator, normalized Export Cost Indicator (ECI) scoring engine, interactive Leaflet trade map, and route comparison application for Indian MSMEs.
 
+## Buildathon Project - χάρις (Grace)
+
+An project for buildathon hackathon - helping startups and MSMEs with intelligent export cost calculations and route optimization.
+
 ![Export Cost Indicator Portal](https://raw.githubusercontent.com/antigravity/export-cost-app/main/docs/screenshot.png)
 
 ## Features
@@ -50,3 +54,6 @@ npm run typecheck
 - [Calculation Engine Engine Docs](docs/calculation-engine.md)
 - [AWS Deployment Guide](docs/aws-deployment-guide.md)
 - [User Guide](docs/user-guide.md)
+
+## Presentation
+Check out the interactive presentation in the `Presentation/` folder with live demo integration.
