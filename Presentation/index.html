@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Void's Resonance — A Cinematic Scroll Experience</title>
+  <meta name="description"
+    content="An immersive scrollytelling experiment exploring cosmic resonance through cinematic visuals and interactive scroll-driven animations.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Sora:wght@200;300;400;600&display=swap"
+    rel="stylesheet">
+
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <!-- Tone.js for Interactive Audio -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN SYSTEM — Cinematic Noir-Gold
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg-deep: #06060C;
+      --bg-scene: #0A0A14;
+      --gold: #C9A84C;
+      --gold-dim: #8B7535;
+      --gold-glow: rgba(201, 168, 76, 0.35);
+      --ivory: #E8E4DC;
+      --ivory-dim: rgba(232, 228, 220, 0.5);
+      --crimson: #8B2020;
+      --crimson-glow: rgba(139, 32, 32, 0.4);
+      --midnight: #0D1B2A;
+      --slate: #1B2838;
+
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body: 'Sora', sans-serif;
+
+      --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: auto;
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar {
+      display: none;
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: var(--ivory);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      cursor: none;
+    }
+
+    /* ═══════════════════════════════════════════
+       CUSTOM CURSOR
+    ═══════════════════════════════════════════ */
+    #cursor-outer {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      border: 1.5px solid var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.3s var(--ease-smooth), height 0.3s var(--ease-smooth),
+        border-color 0.3s var(--ease-smooth), opacity 0.3s;
+      mix-blend-mode: difference;
+    }
+
+    #cursor-dot {
+      position: fixed;
+      width: 6px;
+      height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10000;
+      transform: translate(-50%, -50%);
+      transition: background 0.3s;
+    }
+
+    /* ═══════════════════════════════════════════
+       CURSOR TRAIL (from format2)
+    ═══════════════════════════════════════════ */
+    .cursor-trail {
+      position: fixed;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.5;
+      mix-blend-mode: screen;
+      transition: background-color 0.3s;
+    }
+
+    /* ═══════════════════════════════════════════
+       MOUSE GLOW (from format2)
+    ═══════════════════════════════════════════ */
+    #mouse-glow {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+      mix-blend-mode: screen;
+      transition: opacity 0.3s;
+    }
+
+    /* ═══════════════════════════════════════════
+       CLICK RIPPLE (from format2)
+    ═══════════════════════════════════════════ */
+    .ripple {
+      position: fixed;
+      border-radius: 50%;
+      border: 1.5px solid var(--gold);
+      pointer-events: none;
+      z-index: 9997;
+      animation: ripple-expand 1.2s var(--ease-smooth) forwards;
+    }
+
+    @keyframes ripple-expand {
+      0% {
+        width: 0;
+        height: 0;
+        opacity: 0.8;
+      }
+
+      100% {
+        width: 250px;
+        height: 250px;
+        opacity: 0;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       BURST PARTICLES (from format2)
+    ═══════════════════════════════════════════ */
+    .burst-particle {
+      position: fixed;
+      width: 3px;
+      height: 3px;
+      background: var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 1;
+    }
+
+    /* ═══════════════════════════════════════════
+       CANVAS LAYERS
+    ═══════════════════════════════════════════ */
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Film Grain Overlay */
+    #grain-overlay {
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      z-index: 9990;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      animation: grain 0.5s steps(6) infinite;
+    }
+
+    @keyframes grain {
+
+      0%,
+      100% {
+        transform: translate(0, 0);
+      }
+
+      10% {
+        transform: translate(-5%, -10%);
+      }
+
+      30% {
+        transform: translate(3%, -15%);
+      }
+
+      50% {
+        transform: translate(12%, 9%);
+      }
+
+      70% {
+        transform: translate(9%, 4%);
+      }
+
+      90% {
+        transform: translate(-1%, 7%);
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       SCROLL PROGRESS (enhanced with glow from format2)
+    ═══════════════════════════════════════════ */
+    #scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--ivory));
+      z-index: 9995;
+      transform-origin: left;
+      box-shadow: 0 0 8px var(--gold-glow);
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE COUNTER (from format2)
+    ═══════════════════════════════════════════ */
+    #scene-counter {
+      position: fixed;
+      top: 30px;
+      left: 30px;
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--ivory-dim);
+      z-index: 9994;
+    }
+
+    #scene-counter .current {
+      color: var(--gold);
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-shadow: 0 0 10px var(--gold-glow);
+    }
+
+    #scene-counter .total {
+      font-size: 0.7rem;
+    }
+
+    /* Side Navigation Dots (enhanced with format2 tooltips) */
+    #nav-dots {
+      position: fixed;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 9994;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--ivory-dim);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+    }
+
+    .nav-dot:hover {
+      transform: scale(1.5);
+      background: var(--gold);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+
+    .nav-dot.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      box-shadow: 0 0 12px var(--gold-glow);
+      transform: scale(1.3);
+    }
+
+    .nav-dot::after {
+      content: attr(data-label);
+      position: absolute;
+      right: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(6, 6, 12, 0.9);
+      color: var(--ivory);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      border: 1px solid var(--gold-dim);
+    }
+
+    .nav-dot:hover::after {
+      opacity: 1;
+    }
+
+    /* ═══════════════════════════════════════════
+       AUDIO TOGGLE (from format2, restyled)
+    ═══════════════════════════════════════════ */
+    #audio-toggle {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(201, 168, 76, 0.08);
+      border: 1.5px solid var(--gold-dim);
+      color: var(--gold);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9994;
+      transition: all 0.3s var(--ease-smooth);
+      font-size: 18px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    #audio-toggle:hover {
+      background: var(--gold);
+      color: var(--bg-deep);
+      box-shadow: 0 0 25px var(--gold-glow);
+      transform: scale(1.1);
+    }
+
+    #audio-toggle.muted {
+      background: rgba(232, 228, 220, 0.03);
+      border-color: var(--ivory-dim);
+      color: var(--ivory-dim);
+    }
+
+    /* ═══════════════════════════════════════════
+       KEYBOARD HINTS (from format2, restyled)
+    ═══════════════════════════════════════════ */
+    #keyboard-hint {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--ivory-dim);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      z-index: 9994;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+      display: flex;
+      gap: 18px;
+      background: rgba(6, 6, 12, 0.7);
+      padding: 10px 22px;
+      border-radius: 20px;
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(201, 168, 76, 0.1);
+    }
+
+    #keyboard-hint.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .key-hint {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .key {
+      background: rgba(201, 168, 76, 0.1);
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 0.55rem;
+      letter-spacing: 0.05em;
+      color: var(--gold);
+    }
+
+    /* ═══════════════════════════════════════════
+       GLITCH EFFECT (from format2, gold themed)
+    ═══════════════════════════════════════════ */
+    @keyframes glitch {
+
+      0%,
+      100% {
+        transform: translate(0);
+      }
+
+      25% {
+        transform: translate(-2px, 2px);
+        text-shadow: -2px 2px 0 var(--gold), 2px -2px 0 var(--crimson);
+      }
+
+      50% {
+        transform: translate(2px, -2px);
+        text-shadow: 2px -2px 0 var(--gold), -2px 2px 0 var(--crimson);
+      }
+
+      75% {
+        transform: translate(-1px, -1px);
+        text-shadow: -1px -1px 0 var(--crimson), 1px 1px 0 var(--gold);
+      }
+    }
+
+    .glitch-active {
+      animation: glitch 0.4s ease-in-out;
+    }
+
+    /* ═══════════════════════════════════════════
+       AMBIENT FLOATING PARTICLES (GSAP, from format2)
+    ═══════════════════════════════════════════ */
+    .ambient-particle {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0.3;
+      filter: blur(1px);
+      mix-blend-mode: screen;
+    }
+
+    /* ═══════════════════════════════════════════
+       THE ORB — Luminous Ember (behind text)
+    ═══════════════════════════════════════════ */
+    #energy-orb {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: clamp(60px, 12vw, 120px);
+      height: clamp(60px, 12vw, 120px);
+      border-radius: 50%;
+      /* Semi-transparent gradient for translucency */
+      background: radial-gradient(circle at 35% 35%,
+          rgba(255, 245, 224, 0.85),
+          rgba(201, 168, 76, 0.6) 50%,
+          rgba(139, 117, 53, 0.45) 100%);
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      /* BEHIND text (z-index: 30) */
+      pointer-events: none;
+      opacity: 0.82;
+      /* slight translucency */
+      box-shadow:
+        0 0 60px 30px rgba(201, 168, 76, 0.28),
+        0 0 120px 60px rgba(201, 168, 76, 0.12),
+        inset 0 0 25px rgba(255, 255, 255, 0.45);
+      will-change: transform, opacity, box-shadow;
+    }
+
+    /* Shiny specular highlight */
+    #orb-shine {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: clamp(60px, 12vw, 120px);
+      height: clamp(60px, 12vw, 120px);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 21;
+      pointer-events: none;
+      /* Offset highlight to simulate top-left light source */
+      background: radial-gradient(ellipse 38% 26% at 30% 26%,
+          rgba(255, 255, 255, 0.72) 0%,
+          rgba(255, 255, 255, 0.18) 45%,
+          transparent 70%);
+      will-change: transform;
+      animation: orb-shimmer 3.5s ease-in-out infinite;
+    }
+
+    @keyframes orb-shimmer {
+
+      0%,
+      100% {
+        opacity: 0.8;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* Rays container */
+    #orb-rays {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: clamp(160px, 32vw, 320px);
+      height: clamp(160px, 32vw, 320px);
+      transform: translate(-50%, -50%);
+      z-index: 19;
+      /* even further back */
+      pointer-events: none;
+      border-radius: 50%;
+      will-change: transform, opacity;
+      animation: rays-spin 18s linear infinite;
+    }
+
+    @keyframes rays-spin {
+      from {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    .orb-ray {
+      position: absolute;
+      left: 50%;
+      bottom: 50%;
+      width: 1px;
+      /* Ray extends from orb edge outward */
+      height: clamp(30px, 6vw, 60px);
+      transform-origin: bottom center;
+      background: linear-gradient(to top,
+          rgba(201, 168, 76, 0.5),
+          rgba(201, 168, 76, 0.08) 60%,
+          transparent 100%);
+      border-radius: 1px;
+    }
+
+    #orb-ring {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: clamp(120px, 22vw, 220px);
+      height: clamp(120px, 22vw, 220px);
+      border-radius: 50%;
+      border: 1px solid rgba(201, 168, 76, 0.2);
+      transform: translate(-50%, -50%);
+      z-index: 19;
+      pointer-events: none;
+      will-change: transform, opacity;
+      animation: orb-ring-pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes orb-ring-pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.12);
+        opacity: 0.6;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE LAYOUT
+    ═══════════════════════════════════════════ */
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    /* ═══════════════════════════════════════════
+       TYPOGRAPHY — Cinematic
+    ═══════════════════════════════════════════ */
+    h1,
+    h2 {
+      font-family: var(--font-display);
+      font-weight: 300;
+      line-height: 1.0;
+      text-align: center;
+      z-index: 30;
+      position: relative;
+      letter-spacing: 0.03em;
+    }
+
+    h1 {
+      font-size: clamp(3.5rem, 10vw, 8rem);
+    }
+
+    h2 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+    }
+
+    .split-char {
+      display: inline-block;
+      opacity: 0;
+      transform: translateY(60px) rotateX(-40deg);
+      transform-origin: bottom center;
+    }
+
+    p.scene-text {
+      font-family: var(--font-body);
+      font-size: clamp(0.85rem, 1.5vw, 1.05rem);
+      font-weight: 200;
+      text-align: center;
+      max-width: 520px;
+      margin: 2rem auto 0;
+      line-height: 1.8;
+      letter-spacing: 0.04em;
+      color: var(--ivory-dim);
+    }
+
+    .scene-number {
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 1.5rem;
+      display: block;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 1 — TITLE
+    ═══════════════════════════════════════════ */
+    .s1-content {
+      text-align: center;
+    }
+
+    .s1-content h1 {
+      color: var(--ivory);
+    }
+
+    .s1-content h1 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .s1-subtitle {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-top: 2rem;
+      opacity: 0;
+    }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeInHint 1.5s 2s forwards;
+    }
+
+    .scroll-hint span {
+      font-size: 0.55rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollPulse {
+
+      0%,
+      100% {
+        scaleY: 1;
+        opacity: 0.6;
+      }
+
+      50% {
+        scaleY: 1.4;
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeInHint {
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Horizontal rule accent */
+    .scene-hr {
+      width: 60px;
+      height: 1px;
+      background: var(--gold);
+      margin: 1.5rem auto;
+      opacity: 0.5;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 2 — THE DRIFT
+    ═══════════════════════════════════════════ */
+    .s2-content {
+      text-align: center;
+      opacity: 0;
+      transform: translateY(60px);
+    }
+
+    /* Floating geometric shards */
+    .geo-shard {
+      position: absolute;
+      border: 1px solid rgba(201, 168, 76, 0.15);
+      pointer-events: none;
+      z-index: 15;
+      opacity: 0;
+    }
+
+    .shard-1 {
+      width: 200px;
+      height: 200px;
+      top: 15%;
+      left: 8%;
+      transform: rotate(45deg);
+    }
+
+    .shard-2 {
+      width: 120px;
+      height: 120px;
+      top: 60%;
+      right: 12%;
+      transform: rotate(30deg);
+      border-color: rgba(139, 32, 32, 0.2);
+    }
+
+    .shard-3 {
+      width: 80px;
+      height: 300px;
+      top: 20%;
+      right: 30%;
+      transform: rotate(-15deg);
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 3 — THE MEMORY
+    ═══════════════════════════════════════════ */
+    .s3-content {
+      opacity: 0;
+    }
+
+    .s3-wipe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: left;
+      z-index: 25;
+      mix-blend-mode: overlay;
+      opacity: 0.15;
+    }
+
+    .s3-vertical-line {
+      position: absolute;
+      width: 1px;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent, var(--gold-dim), transparent);
+      opacity: 0;
+      z-index: 15;
+    }
+
+    .s3-vl-1 {
+      left: 25%;
+    }
+
+    .s3-vl-2 {
+      left: 50%;
+    }
+
+    .s3-vl-3 {
+      left: 75%;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 4 — THE FRACTURE
+    ═══════════════════════════════════════════ */
+    .s4-content {
+      opacity: 0;
+      z-index: 30;
+      position: relative;
+    }
+
+    .s4-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 15;
+    }
+
+    .s4-grid-line {
+      position: absolute;
+      background: rgba(201, 168, 76, 0.08);
+    }
+
+    .s4-grid-h {
+      width: 100%;
+      height: 1px;
+      left: 0;
+    }
+
+    .s4-grid-v {
+      width: 1px;
+      height: 100%;
+      top: 0;
+    }
+
+    .s4-diamond {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50vmin;
+      height: 50vmin;
+      transform: translate(-50%, -50%) rotate(45deg) scale(0);
+      border: 1px solid var(--crimson);
+      z-index: 16;
+      box-shadow: inset 0 0 80px var(--crimson-glow);
+    }
+
+    .s4-diamond-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30vmin;
+      height: 30vmin;
+      transform: translate(-50%, -50%) rotate(45deg) scale(0);
+      border: 1px solid var(--gold);
+      z-index: 17;
+      box-shadow: inset 0 0 60px var(--gold-glow);
+    }
+
+    /* Demo Button */
+    .demo-button {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 14px 36px;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--bg-deep);
+      background: var(--gold);
+      border: 2px solid var(--gold);
+      border-radius: 2px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.4s var(--ease-smooth);
+      position: relative;
+      z-index: 35;
+      opacity: 0;
+      transform: translateY(20px);
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    .demo-button:hover {
+      background: transparent;
+      color: var(--gold);
+      box-shadow: 0 0 40px var(--gold-glow), inset 0 0 20px var(--gold-glow);
+      transform: translateY(20px) scale(1.05);
+      letter-spacing: 0.35em;
+    }
+
+    .demo-button:active {
+      transform: translateY(20px) scale(0.98);
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 5 — THE CONVERGENCE
+    ═══════════════════════════════════════════ */
+    .s5-content {
+      opacity: 0;
+      transform: translateY(100px);
+      z-index: 30;
+      position: relative;
+    }
+
+    .s5-ring-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100vmin;
+      height: 100vmin;
+      opacity: 0;
+      z-index: 15;
+    }
+
+    .s5-ray {
+      position: absolute;
+      width: 2px;
+      height: 50%;
+      top: 0;
+      left: 50%;
+      transform-origin: bottom center;
+      background: linear-gradient(to top, transparent, var(--gold), transparent 80%);
+      opacity: 0.3;
+    }
+
+    .s5-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(201, 168, 76, 0.15);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .s5-c1 {
+      width: 30vmin;
+      height: 30vmin;
+    }
+
+    .s5-c2 {
+      width: 50vmin;
+      height: 50vmin;
+    }
+
+    .s5-c3 {
+      width: 70vmin;
+      height: 70vmin;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 6 — THE ECHO
+    ═══════════════════════════════════════════ */
+    .s6-content {
+      opacity: 0;
+    }
+
+    .s6-content h2 {
+      color: var(--ivory-dim);
+    }
+
+    /* Fading wave lines */
+    .wave-line {
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      left: 0;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+      opacity: 0;
+      z-index: 15;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCENE 7 — THE END
+    ═══════════════════════════════════════════ */
+    #scene-7 {
+      background: var(--ivory);
+      color: var(--bg-deep);
+    }
+
+    #scene-7 h1 {
+      color: var(--bg-deep);
+    }
+
+    #scene-7 h1 em {
+      color: var(--gold-dim);
+    }
+
+    .s7-content {
+      opacity: 0;
+    }
+
+    .s7-tag {
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════
+       AMBIENT FLOATING DUST (CSS-only)
+    ═══════════════════════════════════════════ */
+    .dust-particle {
+      position: fixed;
+      width: 2px;
+      height: 2px;
+      background: var(--gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 3;
+      opacity: 0;
+      animation: dustFloat linear infinite;
+    }
+
+    @keyframes dustFloat {
+      0% {
+        transform: translateY(100vh) translateX(0);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 0.4;
+      }
+
+      90% {
+        opacity: 0.4;
+      }
+
+      100% {
+        transform: translateY(-10vh) translateX(30px);
+        opacity: 0;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      #nav-dots {
+        right: 14px;
+        gap: 14px;
+      }
+
+      .nav-dot {
+        width: 6px;
+        height: 6px;
+      }
+
+      .nav-dot::after {
+        display: none;
+      }
+
+      h1 {
+        font-size: clamp(2.5rem, 12vw, 5rem);
+      }
+
+      h2 {
+        font-size: clamp(2rem, 8vw, 3.5rem);
+      }
+
+      p.scene-text {
+        max-width: 85vw;
+      }
+
+      body {
+        cursor: auto;
+      }
+
+      #cursor-outer,
+      #cursor-dot {
+        display: none;
+      }
+
+      .cursor-trail {
+        display: none;
+      }
+
+      #keyboard-hint,
+      #scene-counter {
+        display: none;
+      }
+
+      #audio-toggle {
+        bottom: 20px;
+        right: 20px;
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+      }
+
+      .demo-button {
+        padding: 12px 24px;
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+      }
+
+      .demo-button:hover {
+        letter-spacing: 0.25em;
+        transform: translateY(20px) scale(1.02);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Custom Cursor -->
+  <div id="cursor-outer"></div>
+  <div id="cursor-dot"></div>
+
+  <!-- Mouse Glow (from format2) -->
+  <div id="mouse-glow"></div>
+
+  <!-- Particle Canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Film Grain -->
+  <div id="grain-overlay"></div>
+
+  <!-- Scroll Progress Bar -->
+  <div id="scroll-progress"></div>
+
+  <!-- Scene Counter (from format2) -->
+  <div id="scene-counter"><span class="current">01</span> / <span class="total">07</span></div>
+
+  <!-- The Orb (behind text) -->
+  <div id="orb-rays"></div>
+  <div id="energy-orb"></div>
+  <div id="orb-shine"></div>
+  <div id="orb-ring"></div>
+
+  <!-- Side Navigation -->
+  <nav id="nav-dots">
+    <div class="nav-dot active" data-label="χάρις" data-scene="0"></div>
+    <div class="nav-dot" data-label="Drift" data-scene="1"></div>
+    <div class="nav-dot" data-label="Handaling" data-scene="2"></div>
+    <div class="nav-dot" data-label="Presentation" data-scene="3"></div>
+    <div class="nav-dot" data-label="Support" data-scene="4"></div>
+    <div class="nav-dot" data-label="Conclusion" data-scene="5"></div>
+    <div class="nav-dot" data-label="End" data-scene="6"></div>
+  </nav>
+
+  <!-- Audio Toggle (from format2) -->
+  <button id="audio-toggle" class="muted" title="Toggle Audio (M)">🔇</button>
+
+  <!-- Keyboard Hints (from format2) -->
+  <div id="keyboard-hint">
+    <span class="key-hint"><span class="key">↑ ↓</span> Navigate</span>
+    <span class="key-hint"><span class="key">Space</span> Next</span>
+    <span class="key-hint"><span class="key">M</span> Audio</span>
+    <span class="key-hint"><span class="key">R</span> Reset</span>
+  </div>
+
+  <div id="app">
+
+    <!-- SCENE 1: ORIGIN -->
+    <section class="scene" id="scene-1">
+      <div class="s1-content">
+        <h1 data-split>χάρις<br></h1><br>
+        <h3><i>aka</i></h3>
+        <h2><em>Grace</em></h2>
+        <div class="scene-hr"></div>
+        <p class="s1-subtitle">Export cost indicator</p>
+      </div>
+      <div class="scroll-hint">
+        <span>Scroll to begin</span>
+        <div class="scroll-line"></div>
+      </div>
+    </section>
+
+    <!-- SCENE 2: THE DRIFT -->
+    <section class="scene" id="scene-2">
+      <div class="geo-shard shard-1"></div>
+      <div class="geo-shard shard-2"></div>
+      <div class="geo-shard shard-3"></div>
+      <div class="s2-content">
+        <span class="scene-number">I — The Drift</span>
+        <h2 data-split>Idea of our Idea</h2>
+        <div class="scene-hr">----</div>
+        <p class="scene-text">Calculate most effective way of export .<br> Give different trade routes options
+          .<br>
+          Result total estimate with route mapping . </p>
+      </div>
+    </section>
+
+    <!-- SCENE 3: THE MEMORY -->
+    <section class="scene" id="scene-3">
+      <div class="s3-wipe"></div>
+      <div class="s3-vertical-line s3-vl-1"></div>
+      <div class="s3-vertical-line s3-vl-2"></div>
+      <div class="s3-vertical-line s3-vl-3"></div>
+      <div class="s3-content">
+        <span class="scene-number">II — The Memory</span>
+        <h2 data-split>Handling</h2>
+        <div class="scene-hr"></div>
+        <p class="scene-text">Give user dashboard <br><--For result--> <br> Upload product specification <br> Cargo
+            package &
+            dimensions <br> Indian export origin <br> Final destination port <br> Incoterm 2020 & Transport selection
+            <br>
+            Review and calculation
+        </p>
+      </div>
+    </section>
+
+    <!-- SCENE 4: THE FRACTURE -->
+    <section class="scene" id="scene-4">
+      <div class="s4-grid" id="s4-grid"></div>
+      <div class="s4-diamond" id="s4-diamond-1"></div>
+      <div class="s4-diamond-inner" id="s4-diamond-2"></div>
+      <div class="s4-content">
+        <span class="scene-number">III — project grace</span>
+        <h2 data-split>Presentation </h2>
+        <div class="scene-hr"></div>
+        <p class="scene-text">Live Demo.</p>
+        <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer" class="demo-button">Launch Demo</a>
+      </div>
+    </section>
+
+    <!-- SCENE 5: THE CONVERGENCE -->
+    <section class="scene" id="scene-5">
+      <div class="s5-ring-container" id="s5-ring">
+        <div class="s5-circle s5-c1"></div>
+        <div class="s5-circle s5-c2"></div>
+        <div class="s5-circle s5-c3"></div>
+      </div>
+      <div class="s5-content">
+        <span class="scene-number" style="color: var(--gold);">IV — the users</span>
+        <h2 data-split style="color: var(--gold);">Encourge Startups </h2>
+        <div class="scene-hr" style="background: var(--gold);"></div>
+        <p class="scene-text" style="color: var(--gold-dim);">User friendly . Smooth UI/UX .<br> Helps in incoterm 2020
+          .<br> </p>
+      </div>
+    </section>
+
+    <!-- SCENE 6: THE ECHO -->
+    <section class="scene" id="scene-6">
+      <div class="s6-content">
+        <span class="scene-number">V — The Echo</span>
+        <h2 data-split>Conclusion</h2>
+        <div class="scene-hr"></div>
+        <p class="scene-text">Give result on the basis of incoterm 2020 taxations <br>Simplicity in every click , value
+          in every choice .</p>
+      </div>
+    </section>
+
+    <!-- SCENE 7: THE END -->
+    <section class="scene" id="scene-7">
+      <div class="s7-content">
+        <h1 data-split>Thank You <br></h1>
+        <h2><em> <br></em></h2>
+        <div class="scene-hr" style="background: var(--gold-dim);"></div>
+        <p class="s7-tag"><em>Presented by Grace</em></p>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      gsap.registerPlugin(ScrollTrigger);
+
+      /* ═════════════════════════════════════
+         SPLIT TEXT INTO CHARACTERS
+      ═════════════════════════════════════ */
+      document.querySelectorAll('[data-split]').forEach(el => {
+        const html = el.innerHTML;
+        let result = '';
+        let inTag = false;
+        let tagBuffer = '';
+
+        for (let i = 0; i < html.length; i++) {
+          const c = html[i];
+          if (c === '<') { inTag = true; tagBuffer += c; continue; }
+          if (inTag) {
+            tagBuffer += c;
+            if (c === '>') {
+              inTag = false;
+              result += tagBuffer;
+              tagBuffer = '';
+            }
+            continue;
+          }
+          if (c === ' ') {
+            result += ' ';
+          } else {
+            result += `<span class="split-char">${c}</span>`;
+          }
+        }
+        el.innerHTML = result;
+      });
+
+      /* ═════════════════════════════════════
+         INTERACTIVE AUDIO SYSTEM (from format2)
+      ═════════════════════════════════════ */
+      let audioEnabled = false;
+      let synth, ambientNoise, reverb;
+
+      async function initAudio() {
+        if (audioEnabled) return;
+        await Tone.start();
+        reverb = new Tone.Reverb({ decay: 3, wet: 0.4 }).toDestination();
+        synth = new Tone.PolySynth(Tone.Synth, {
+          envelope: { attack: 1.5, decay: 0.8, sustain: 0.4, release: 3 },
+          volume: -18
+        }).connect(reverb);
+        ambientNoise = new Tone.Noise("pink").start();
+        const noiseFilter = new Tone.AutoFilter(0.03).start();
+        const noiseVolume = new Tone.Volume(-28).toDestination();
+        ambientNoise.connect(noiseFilter);
+        noiseFilter.connect(noiseVolume);
+        audioEnabled = true;
+      }
+
+      function playNote(notes, duration = "4n") {
+        if (audioEnabled && synth) {
+          synth.triggerAttackRelease(notes, duration);
+        }
+      }
+
+      const audioToggle = document.getElementById('audio-toggle');
+      audioToggle.addEventListener('click', async () => {
+        if (!audioEnabled) {
+          await initAudio();
+          audioToggle.classList.remove('muted');
+          audioToggle.textContent = '🔊';
+          playNote(['C3', 'E3', 'G3'], '2n');
+        } else {
+          Tone.Transport.stop();
+          if (synth) synth.releaseAll();
+          audioEnabled = false;
+          audioToggle.classList.add('muted');
+          audioToggle.textContent = '🔇';
+        }
+      });
+
+      /* ═════════════════════════════════════
+         CUSTOM CURSOR
+      ═════════════════════════════════════ */
+      const cursorOuter = document.getElementById('cursor-outer');
+      const cursorDot = document.getElementById('cursor-dot');
+      let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+      let cursorX = mouseX, cursorY = mouseY;
+
+      document.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        cursorDot.style.left = mouseX + 'px';
+        cursorDot.style.top = mouseY + 'px';
+      });
+
+      function animateCursor() {
+        cursorX += (mouseX - cursorX) * 0.12;
+        cursorY += (mouseY - cursorY) * 0.12;
+        cursorOuter.style.left = cursorX + 'px';
+        cursorOuter.style.top = cursorY + 'px';
+        requestAnimationFrame(animateCursor);
+      }
+      animateCursor();
+
+      /* ═════════════════════════════════════
+         CURSOR TRAIL (from format2)
+      ═════════════════════════════════════ */
+      const trailCount = 10;
+      const trails = [];
+
+      for (let i = 0; i < trailCount; i++) {
+        const trail = document.createElement('div');
+        trail.className = 'cursor-trail';
+        document.body.appendChild(trail);
+        trails.push({ el: trail, x: mouseX, y: mouseY });
+      }
+
+      function animateTrails() {
+        let prevX = mouseX;
+        let prevY = mouseY;
+
+        trails.forEach((trail, index) => {
+          trail.x += (prevX - trail.x) * 0.2;
+          trail.y += (prevY - trail.y) * 0.2;
+
+          trail.el.style.transform = `translate(${trail.x - 2.5}px, ${trail.y - 2.5}px) scale(${1 - index * 0.07})`;
+          trail.el.style.opacity = (1 - (index / trailCount) * 0.9) * 0.5;
+
+          prevX = trail.x;
+          prevY = trail.y;
+        });
+
+        requestAnimationFrame(animateTrails);
+      }
+      animateTrails();
+
+      /* ═════════════════════════════════════
+         MOUSE GLOW (from format2)
+      ═════════════════════════════════════ */
+      const mouseGlow = document.getElementById('mouse-glow');
+      document.addEventListener('mousemove', (e) => {
+        mouseGlow.style.left = (e.clientX - 150) + 'px';
+        mouseGlow.style.top = (e.clientY - 150) + 'px';
+      });
+
+      /* ═════════════════════════════════════
+         CLICK RIPPLE + BURST (from format2)
+      ═════════════════════════════════════ */
+      document.addEventListener('click', (e) => {
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple';
+        ripple.style.left = (e.clientX - 125) + 'px';
+        ripple.style.top = (e.clientY - 125) + 'px';
+        document.body.appendChild(ripple);
+
+        playNote(['C4', 'E4', 'G4', 'B4'], '16n');
+
+        // Burst particles
+        for (let i = 0; i < 8; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'burst-particle';
+          particle.style.left = e.clientX + 'px';
+          particle.style.top = e.clientY + 'px';
+          document.body.appendChild(particle);
+
+          const angle = (Math.PI * 2 * i) / 8;
+          const distance = 40 + Math.random() * 40;
+
+          gsap.to(particle, {
+            x: Math.cos(angle) * distance,
+            y: Math.sin(angle) * distance,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power2.out",
+            onComplete: () => particle.remove()
+          });
+        }
+
+        setTimeout(() => ripple.remove(), 1200);
+      });
+
+      /* ═════════════════════════════════════
+         AMBIENT PARTICLES (GSAP, from format2)
+      ═════════════════════════════════════ */
+      function createAmbientParticles() {
+        for (let i = 0; i < 20; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'ambient-particle';
+          const size = Math.random() * 3 + 1;
+          particle.style.width = size + 'px';
+          particle.style.height = size + 'px';
+          particle.style.left = Math.random() * 100 + '%';
+          particle.style.top = Math.random() * 100 + '%';
+
+          const colors = [
+            'var(--gold)',
+            'var(--gold-dim)',
+            'rgba(232, 228, 220, 0.6)'
+          ];
+          particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+          document.body.appendChild(particle);
+
+          gsap.to(particle, {
+            x: (Math.random() - 0.5) * 250,
+            y: (Math.random() - 0.5) * 250,
+            duration: Math.random() * 15 + 10,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+          });
+
+          gsap.to(particle, {
+            opacity: Math.random() * 0.3 + 0.1,
+            duration: Math.random() * 3 + 2,
+            repeat: -1,
+            yoyo: true
+          });
+        }
+      }
+      createAmbientParticles();
+
+      /* ═════════════════════════════════════
+         PARTICLE FIELD (Canvas)
+      ═════════════════════════════════════ */
+      const canvas = document.getElementById('particle-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      const PARTICLE_COUNT = 80;
+      let scrollProgress = 0;
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      class Particle {
+        constructor() {
+          this.reset();
+        }
+        reset() {
+          this.x = Math.random() * canvas.width;
+          this.y = Math.random() * canvas.height;
+          this.size = Math.random() * 1.5 + 0.3;
+          this.speedX = (Math.random() - 0.5) * 0.3;
+          this.speedY = (Math.random() - 0.5) * 0.15;
+          this.opacity = Math.random() * 0.4 + 0.1;
+          this.life = Math.random();
+        }
+        update() {
+          this.x += this.speedX + (scrollProgress - 0.5) * 0.5;
+          this.y += this.speedY - 0.1;
+          this.life -= 0.001;
+          if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.life <= 0) {
+            this.reset();
+            this.y = canvas.height + 5;
+          }
+        }
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(201, 168, 76, ${this.opacity * (0.5 + scrollProgress * 0.5)})`;
+          ctx.fill();
+        }
+      }
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(new Particle());
+      }
+
+      function drawParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+
+        // Draw connections between close particles
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(201, 168, 76, ${(1 - dist / 120) * 0.06})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(drawParticles);
+      }
+      drawParticles();
+
+      /* ═════════════════════════════════════
+         CSS DUST PARTICLES
+      ═════════════════════════════════════ */
+      const dustContainer = document.body;
+      for (let i = 0; i < 15; i++) {
+        const dust = document.createElement('div');
+        dust.className = 'dust-particle';
+        dust.style.left = Math.random() * 100 + 'vw';
+        dust.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        dust.style.animationDelay = (Math.random() * 10) + 's';
+        dust.style.width = (Math.random() * 2 + 1) + 'px';
+        dust.style.height = dust.style.width;
+        dustContainer.appendChild(dust);
+      }
+
+      /* ═════════════════════════════════════
+         SETUP DYNAMIC ELEMENTS
+      ═════════════════════════════════════ */
+      // Scene 4 grid lines
+      const s4Grid = document.getElementById('s4-grid');
+      for (let i = 1; i < 6; i++) {
+        const h = document.createElement('div');
+        h.className = 's4-grid-line s4-grid-h';
+        h.style.top = (i * 16.66) + '%';
+        s4Grid.appendChild(h);
+
+        const v = document.createElement('div');
+        v.className = 's4-grid-line s4-grid-v';
+        v.style.left = (i * 16.66) + '%';
+        s4Grid.appendChild(v);
+      }
+
+      // Scene 5 rays
+      const s5Ring = document.getElementById('s5-ring');
+      for (let i = 0; i < 24; i++) {
+        const ray = document.createElement('div');
+        ray.className = 's5-ray';
+        ray.style.transform = `rotate(${i * 15}deg)`;
+        s5Ring.appendChild(ray);
+      }
+
+      // Scene 6 wave lines
+      const scene6 = document.getElementById('scene-6');
+      for (let i = 0; i < 8; i++) {
+        const wl = document.createElement('div');
+        wl.className = 'wave-line';
+        wl.style.top = (20 + i * 8) + '%';
+        scene6.appendChild(wl);
+      }
+
+      /* ═════════════════════════════════════
+         SCROLL PROGRESS BAR
+      ═════════════════════════════════════ */
+      const progressBar = document.getElementById('scroll-progress');
+      ScrollTrigger.create({
+        trigger: "#app",
+        start: "top top",
+        end: "bottom bottom",
+        onUpdate: self => {
+          scrollProgress = self.progress;
+          progressBar.style.width = (self.progress * 100) + '%';
+
+          // Audio cues at scene transitions (from format2)
+          if (audioEnabled) {
+            if (Math.abs(self.progress - 0.15) < 0.01) playNote('C3', '1n');
+            if (Math.abs(self.progress - 0.35) < 0.01) playNote('E3', '1n');
+            if (Math.abs(self.progress - 0.55) < 0.01) playNote('G3', '1n');
+            if (Math.abs(self.progress - 0.75) < 0.01) playNote(['C4', 'E4', 'G4'], '2n');
+          }
+        }
+      });
+
+      /* ═════════════════════════════════════
+         NAVIGATION DOTS & SCENE COUNTER
+         (scroll-progress based for pinned scenes)
+      ═════════════════════════════════════ */
+      const navDots = document.querySelectorAll('.nav-dot');
+      const scenes = gsap.utils.toArray('.scene');
+      const sceneCounter = document.querySelector('#scene-counter .current');
+      const sceneTotalEl = document.querySelector('#scene-counter .total');
+      const totalScenes = scenes.length;
+      let currentSceneIndex = 0;
+
+      if (sceneTotalEl) sceneTotalEl.textContent = String(totalScenes).padStart(2, '0');
+
+      function updateActiveScene() {
+        const scrollPos = window.scrollY;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+        let newIndex;
+        if (scrollHeight <= 0) {
+          newIndex = 0;
+        } else {
+          const progress = scrollPos / scrollHeight; // 0 to 1
+          newIndex = Math.min(
+            Math.floor(progress * totalScenes),
+            totalScenes - 1
+          );
+        }
+
+        if (currentSceneIndex !== newIndex) {
+          currentSceneIndex = newIndex;
+
+          // Update nav dots
+          navDots.forEach((d, i) => {
+            d.classList.toggle('active', i === currentSceneIndex);
+          });
+
+          // Update scene counter
+          if (sceneCounter) {
+            sceneCounter.textContent = String(currentSceneIndex + 1).padStart(2, '0');
+          }
+
+          // Update trail colors per scene
+          const trailColors = ['#C9A84C', '#C9A84C', '#8B7535', '#8B2020', '#C9A84C', '#8B7535', '#06060C'];
+          trails.forEach(t => t.el.style.background = trailColors[currentSceneIndex] || '#C9A84C');
+        }
+      }
+
+      // Track on scroll
+      window.addEventListener('scroll', updateActiveScene);
+      // Initial call
+      setTimeout(updateActiveScene, 100);
+
+      // Nav dot click — use proportional scroll position
+      navDots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+          const idx = parseInt(dot.dataset.scene);
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const targetScroll = (idx / (totalScenes - 1)) * scrollHeight;
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+          playNote(['C4', 'E4', 'G4'][idx % 3], '16n');
+        });
+      });
+
+      /* ═════════════════════════════════════
+         KEYBOARD NAVIGATION (from format2)
+      ═════════════════════════════════════ */
+      const keyboardHint = document.getElementById('keyboard-hint');
+      setTimeout(() => keyboardHint.classList.add('hidden'), 5000);
+
+      document.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+
+        if (key === 'arrowdown' || key === ' ') {
+          e.preventDefault();
+          const nextIndex = Math.min(currentSceneIndex + 1, totalScenes - 1);
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const targetScroll = (nextIndex / (totalScenes - 1)) * scrollHeight;
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+          playNote('E4', '16n');
+        } else if (key === 'arrowup') {
+          e.preventDefault();
+          const prevIndex = Math.max(currentSceneIndex - 1, 0);
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const targetScroll = (prevIndex / (totalScenes - 1)) * scrollHeight;
+          window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+          playNote('C4', '16n');
+        } else if (key === 'm') {
+          audioToggle.click();
+        } else if (key === 'r') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          playNote(['C3', 'G3', 'C4'], '8n');
+        }
+
+        // Show keyboard hint briefly on any key press
+        keyboardHint.classList.remove('hidden');
+        setTimeout(() => keyboardHint.classList.add('hidden'), 2000);
+      });
+
+      /* ═════════════════════════════════════
+         PARALLAX MOUSE EFFECT ON ORB (from format2)
+      ═════════════════════════════════════ */
+      const orb = document.getElementById('energy-orb');
+      document.addEventListener('mousemove', (e) => {
+        const xPos = (e.clientX / window.innerWidth - 0.5) * 10;
+        const yPos = (e.clientY / window.innerHeight - 0.5) * 10;
+        // Move orb + shine + rays together with parallax
+        [orb, document.getElementById('orb-shine'), document.getElementById('orb-rays')].forEach(el => {
+          if (!el) return;
+          gsap.to(el, {
+            x: `+=${xPos}`,
+            y: `+=${yPos}`,
+            duration: 0.8,
+            ease: 'power2.out',
+            overwrite: 'auto'
+          });
+        });
+      });
+
+      /* ═════════════════════════════════════
+         GLITCH EFFECT ON TITLE (from format2)
+      ═════════════════════════════════════ */
+      setInterval(() => {
+        if (currentSceneIndex === 0) {
+          const titleEl = document.querySelector('.s1-content h1');
+          if (titleEl) {
+            titleEl.classList.add('glitch-active');
+            setTimeout(() => titleEl.classList.remove('glitch-active'), 400);
+          }
+        }
+      }, 4000);
+
+      /* ═════════════════════════════════════
+         DEMO BUTTON INTERACTIONS
+      ═════════════════════════════════════ */
+      const demoButton = document.querySelector('.demo-button');
+      if (demoButton) {
+        demoButton.addEventListener('mouseenter', () => {
+          playNote(['E4', 'G4', 'B4'], '32n');
+        });
+        
+        demoButton.addEventListener('click', (e) => {
+          playNote(['C4', 'E4', 'G4', 'C5'], '16n');
+          
+          // Visual feedback
+          const ripple = document.createElement('div');
+          ripple.style.position = 'absolute';
+          ripple.style.width = '300px';
+          ripple.style.height = '300px';
+          ripple.style.borderRadius = '50%';
+          ripple.style.border = '2px solid var(--gold)';
+          ripple.style.left = '50%';
+          ripple.style.top = '50%';
+          ripple.style.transform = 'translate(-50%, -50%) scale(0)';
+          ripple.style.pointerEvents = 'none';
+          ripple.style.zIndex = '40';
+          demoButton.parentElement.appendChild(ripple);
+          
+          gsap.to(ripple, {
+            scale: 1.5,
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power2.out',
+            onComplete: () => ripple.remove()
+          });
+        });
+      }
+
+      /* ═════════════════════════════════════
+         ORB RAYS — generate spokes
+      ═════════════════════════════════════ */
+      const orbRaysContainer = document.getElementById('orb-rays');
+      const RAY_COUNT = 14;
+      for (let i = 0; i < RAY_COUNT; i++) {
+        const ray = document.createElement('div');
+        ray.className = 'orb-ray';
+        // Alternate length for organic feel
+        const lenFactor = i % 3 === 0 ? 1.4 : (i % 2 === 0 ? 1.0 : 0.7);
+        const baseH = Math.max(30, Math.min(60, window.innerWidth * 0.06));
+        ray.style.height = (baseH * lenFactor) + 'px';
+        ray.style.opacity = 0.5 + (i % 3) * 0.15;
+        ray.style.transform = `rotate(${(i / RAY_COUNT) * 360}deg)`;
+        orbRaysContainer.appendChild(ray);
+      }
+
+      /* ═════════════════════════════════════
+         ORB MASTER TIMELINE
+      ═════════════════════════════════════ */
+      const orbRing = document.getElementById('orb-ring');
+
+      const goldGradient = `radial-gradient(circle at 35% 35%, #FFF5E0, #C9A84C 50%, #8B7535 100%)`;
+      const crimsonGradient = `radial-gradient(circle at 35% 35%, #FFD0D0, #8B2020 50%, #4A0A0A 100%)`;
+      const whiteGradient = `radial-gradient(circle at 35% 35%, #FFFFFF, #E8E4DC 50%, #C0B8A8 100%)`;
+
+      const shadowGold = `0 0 60px 30px rgba(201,168,76,0.35), 0 0 120px 60px rgba(201,168,76,0.15), inset 0 0 25px rgba(255,255,255,0.6)`;
+      const shadowCrimson = `0 0 60px 30px rgba(139,32,32,0.4), 0 0 120px 60px rgba(139,32,32,0.2), inset 0 0 25px rgba(255,200,200,0.6)`;
+      const shadowBright = `0 0 100px 50px rgba(201,168,76,0.5), 0 0 200px 100px rgba(201,168,76,0.25), inset 0 0 40px rgba(255,255,255,0.9)`;
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
+      const orbShine = document.getElementById('orb-shine');
+
+      let orbTl = gsap.timeline({
+        scrollTrigger: { trigger: "#app", start: "top top", end: "bottom bottom", scrub: 1.5 }
+      });
+
+      orbTl
+        .to(orb, { x: vw * 0.28, y: -vh * 0.2, scale: 0.6, duration: 1 }, 0)
+        .to(orbShine, { x: vw * 0.28, y: -vh * 0.2, scale: 0.6, duration: 1 }, 0)
+        .to(orbRaysContainer, { x: vw * 0.28, y: -vh * 0.2, scale: 0.6, duration: 1 }, 0)
+        .to(orbRing, { x: vw * 0.28, y: -vh * 0.2, scale: 0.6, duration: 1 }, 0)
+
+        .to(orb, { x: -vw * 0.2, y: vh * 0.15, scale: 0.8, duration: 1 }, 1)
+        .to(orbShine, { x: -vw * 0.2, y: vh * 0.15, scale: 0.8, duration: 1 }, 1)
+        .to(orbRaysContainer, { x: -vw * 0.2, y: vh * 0.15, scale: 0.8, duration: 1 }, 1)
+        .to(orbRing, { x: -vw * 0.2, y: vh * 0.15, scale: 0.8, opacity: 0.5, duration: 1 }, 1)
+
+        .to(orb, { x: 0, y: 0, scale: 1.2, background: crimsonGradient, boxShadow: shadowCrimson, duration: 1 }, 2)
+        .to(orbShine, { x: 0, y: 0, scale: 1.2, duration: 1 }, 2)
+        .to(orbRaysContainer, { x: 0, y: 0, scale: 1.2, duration: 1 }, 2)
+        .to(orbRing, { x: 0, y: 0, scale: 1.5, borderColor: 'rgba(139,32,32,0.3)', duration: 1 }, 2)
+
+        .to(orb, { scale: 4, background: whiteGradient, boxShadow: shadowBright, duration: 1 }, 3)
+        .to(orbShine, { scale: 4, duration: 1 }, 3)
+        .to(orbRaysContainer, { scale: 4, opacity: 0, duration: 1 }, 3)
+        .to(orbRing, { scale: 5, opacity: 0, duration: 1 }, 3)
+
+        .to(orb, { scale: 0.05, y: -vh * 0.35, background: goldGradient, boxShadow: shadowGold, duration: 1 }, 4)
+        .to(orbShine, { scale: 0.05, y: -vh * 0.35, duration: 1 }, 4)
+        .to(orbRaysContainer, { scale: 0.05, y: -vh * 0.35, opacity: 1, duration: 1 }, 4)
+        .to(orbRing, { scale: 0.05, y: -vh * 0.35, duration: 1 }, 4)
+
+        .to(orb, { scale: 0, opacity: 0, duration: 0.5 }, 5)
+        .to(orbShine, { scale: 0, opacity: 0, duration: 0.5 }, 5)
+        .to(orbRaysContainer, { scale: 0, opacity: 0, duration: 0.5 }, 5)
+        .to(orbRing, { scale: 0, opacity: 0, duration: 0.5 }, 5);
+
+      /* ═════════════════════════════════════
+         SCENE ANIMATIONS (Pinned)
+      ═════════════════════════════════════ */
+      scenes.forEach((scene, i) => {
+        const isLast = i === scenes.length - 1;
+
+        ScrollTrigger.create({
+          trigger: scene,
+          start: "top top",
+          end: isLast ? "+=0%" : "+=100%",
+          pin: true,
+          pinSpacing: true,
+        });
+
+        let tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: scene,
+            start: "top top",
+            end: isLast ? "+=0%" : "+=100%",
+            scrub: 1.2,
+          }
+        });
+
+        switch (i) {
+
+          /* ─── SCENE 1: Title ─── */
+          case 0: {
+            // Animate in chars on load
+            gsap.fromTo(scene.querySelectorAll('.split-char'),
+              { opacity: 0, y: 60, rotateX: -40 },
+              { opacity: 1, y: 0, rotateX: 0, stagger: 0.04, duration: 0.8, delay: 0.5, ease: "power3.out" }
+            );
+            gsap.to('.s1-subtitle', { opacity: 1, duration: 1, delay: 1.8 });
+
+            // Scroll out
+            tl.to('.s1-content', { y: -120, opacity: 0, ease: 'power1.in' })
+              .to('.scroll-hint', { opacity: 0, duration: 0.2 }, 0);
+            break;
+          }
+
+          /* ─── SCENE 2: The Drift ─── */
+          case 1: {
+            const chars = scene.querySelectorAll('.split-char');
+            tl.to('.shard-1', { opacity: 0.4, rotation: 65, y: -80, duration: 0.5 }, 0)
+              .to('.shard-2', { opacity: 0.3, rotation: 50, y: -60, duration: 0.5 }, 0.05)
+              .to('.shard-3', { opacity: 0.25, rotation: -5, y: -40, duration: 0.5 }, 0.1)
+              .to('.s2-content', { opacity: 1, y: 0, duration: 0.3 }, 0.15);
+
+            chars.forEach((c, ci) => {
+              tl.to(c, { opacity: 1, y: 0, rotateX: 0, duration: 0.08 }, 0.2 + ci * 0.02);
+            });
+
+            tl.to('.s2-content', { opacity: 0, y: -40, duration: 0.2 }, 0.75)
+              .to(['.shard-1', '.shard-2', '.shard-3'], { opacity: 0, duration: 0.2 }, 0.8);
+            break;
+          }
+
+          /* ─── SCENE 3: The Memory ─── */
+          case 2: {
+            const chars = scene.querySelectorAll('.split-char');
+            tl.to('.s3-wipe', { scaleX: 1, duration: 0.3 }, 0)
+              .to('.s3-wipe', { scaleX: 0, transformOrigin: 'right', duration: 0.3 }, 0.3)
+              .to('.s3-vl-1', { opacity: 0.15, duration: 0.2 }, 0.1)
+              .to('.s3-vl-2', { opacity: 0.2, duration: 0.2 }, 0.15)
+              .to('.s3-vl-3', { opacity: 0.15, duration: 0.2 }, 0.2)
+              .to('.s3-content', { opacity: 1, duration: 0.25 }, 0.25);
+
+            chars.forEach((c, ci) => {
+              tl.to(c, { opacity: 1, y: 0, rotateX: 0, duration: 0.06 }, 0.3 + ci * 0.015);
+            });
+
+            tl.to('.s3-content', { opacity: 0, duration: 0.2 }, 0.8)
+              .to(['.s3-vl-1', '.s3-vl-2', '.s3-vl-3'], { opacity: 0, duration: 0.15 }, 0.85);
+            break;
+          }
+
+          /* ─── SCENE 4: The Fracture ─── */
+          case 3: {
+            const chars = scene.querySelectorAll('.split-char');
+            const gridLines = scene.querySelectorAll('.s4-grid-line');
+
+            gridLines.forEach((gl, gi) => {
+              tl.fromTo(gl, { opacity: 0 }, { opacity: 1, duration: 0.1 }, gi * 0.02);
+            });
+
+            tl.to('#s4-diamond-1', { scale: 1, rotation: 45, duration: 0.4, ease: 'power2.out' }, 0.1)
+              .to('#s4-diamond-2', { scale: 1, rotation: 45, duration: 0.4, ease: 'power2.out' }, 0.2)
+              .to('.s4-content', { opacity: 1, duration: 0.2 }, 0.35);
+
+            chars.forEach((c, ci) => {
+              tl.to(c, { opacity: 1, y: 0, rotateX: 0, duration: 0.06 }, 0.4 + ci * 0.02);
+            });
+
+            // Animate the demo button
+            tl.to('.demo-button', { opacity: 1, y: 0, duration: 0.3 }, 0.5);
+
+            tl.to(['.s4-content', '#s4-diamond-1', '#s4-diamond-2'], { opacity: 0, scale: 1.5, duration: 0.25 }, 0.75)
+              .to(gridLines, { opacity: 0, duration: 0.15 }, 0.8);
+            break;
+          }
+
+          /* ─── SCENE 5: The Convergence ─── */
+          case 4: {
+            const chars = scene.querySelectorAll('.split-char');
+            const rays = scene.querySelectorAll('.s5-ray');
+
+            tl.to('.s5-ring-container', { opacity: 1, rotation: 90, duration: 0.6, ease: 'power1.inOut' }, 0);
+
+            rays.forEach((r, ri) => {
+              tl.fromTo(r, { opacity: 0 }, { opacity: 0.3, duration: 0.3 }, ri * 0.02);
+            });
+
+            tl.to('.s5-content', { opacity: 1, y: 0, duration: 0.3 }, 0.25);
+
+            chars.forEach((c, ci) => {
+              tl.to(c, { opacity: 1, y: 0, rotateX: 0, duration: 0.06 }, 0.3 + ci * 0.02);
+            });
+
+            tl.to(scene, { opacity: 0, duration: 0.2 }, 0.8);
+            break;
+          }
+
+          /* ─── SCENE 6: The Echo ─── */
+          case 5: {
+            const chars = scene.querySelectorAll('.split-char');
+            const waveLines = scene.querySelectorAll('.wave-line');
+
+            waveLines.forEach((wl, wi) => {
+              tl.to(wl, { opacity: 0.15, duration: 0.15 }, 0.05 + wi * 0.03);
+            });
+
+            tl.to('.s6-content', { opacity: 1, duration: 0.3 }, 0.15);
+
+            chars.forEach((c, ci) => {
+              tl.to(c, { opacity: 1, y: 0, rotateX: 0, duration: 0.06 }, 0.2 + ci * 0.02);
+            });
+
+            tl.to('.s6-content', { opacity: 0, y: -30, duration: 0.2 }, 0.75)
+              .to(waveLines, { opacity: 0, duration: 0.15 }, 0.8);
+            break;
+          }
+
+          /* ─── SCENE 7: The End ─── */
+          case 6: {
+            const chars = scene.querySelectorAll('.split-char');
+            gsap.fromTo('.s7-content',
+              { opacity: 0, y: 40 },
+              {
+                opacity: 1, y: 0, duration: 1,
+                scrollTrigger: { trigger: scene, start: 'top center', end: 'center center', scrub: 1 }
+              }
+            );
+            // Stagger chars in on scroll
+            chars.forEach((c, ci) => {
+              gsap.fromTo(c,
+                { opacity: 0, y: 40, rotateX: -30 },
+                {
+                  opacity: 1, y: 0, rotateX: 0, duration: 0.5,
+                  scrollTrigger: {
+                    trigger: scene,
+                    start: 'top 60%',
+                    end: 'center center',
+                    scrub: 1,
+                  }
+                }
+              );
+            });
+            break;
+          }
+        }
+      });
+
+      /* ═════════════════════════════════════
+         BACKGROUND COLOR TRANSITIONS
+      ═════════════════════════════════════ */
+      const bgColors = [
+        '#06060C', // S1
+        '#08081A', // S2
+        '#0A0A14', // S3
+        '#0C0810', // S4
+        '#0A0808', // S5 — warm
+        '#06060C', // S6
+        '#E8E4DC', // S7 — light
+      ];
+
+      scenes.forEach((scene, i) => {
+        if (i === 0) return;
+        ScrollTrigger.create({
+          trigger: scene,
+          start: 'top 80%',
+          end: 'top 20%',
+          scrub: true,
+          onUpdate: self => {
+            const fromColor = bgColors[i - 1];
+            const toColor = bgColors[i];
+            document.body.style.backgroundColor = self.progress > 0.5 ? toColor : fromColor;
+          }
+        });
+      });
+
+      /* ═════════════════════════════════════
+         RESIZE HANDLER
+      ═════════════════════════════════════ */
+      window.addEventListener('resize', () => {
+        ScrollTrigger.refresh();
+      });
+    });
+  </script>
+</body>
+
+</html>
